@@ -1,0 +1,52 @@
+.JSEContainer
+{
+	border: 1px solid black;
+	border-radius:5px;
+	padding:10px;
+}
+
+.JSEPager
+{
+	flex-grow: 1;
+	display: flex;
+}
+
+.JSEContainer > .JSETable > table
+{
+	width:100%;
+	border-collapse: collapse;
+}
+
+.JSEContainer > .JSETable > table > thead > tr.JSEFilters > th
+{
+	padding: 2px;
+	vertical-align: middle;
+}
+
+.JSEContainer > .JSETable > table > thead > tr.JSEFilters > th > *
+{
+	width:100%;
+	line-height: 20px;
+}
+
+
+.JSETop
+{
+	padding-bottom:20px;
+}
+
+.JSETop, .JSEBottom
+{
+	display:flex;
+}
+
+.JSESelectPage
+{
+	flex-grow:1;
+}
+
+.JSEPageSelect
+{
+	flex-grow:1;
+	text-align:center;
+}
