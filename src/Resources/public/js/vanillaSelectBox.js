@@ -75,7 +75,7 @@ function vanillaSelectBox(domSelector, options) {
     this.button;
     this.title;
     this.isMultiple = this.root.hasAttribute("multiple");
-    this.multipleSize = this.isMultiple && this.root.hasAttribute("size") ? parseInt(this.root.getAttribute("size")) : -1;
+    this.multipleSize = this.isMultiple && this.root.hasAttribute("size") ? parseInt(this.root.getAttribute("size")) : 1;
     this.isOptgroups = false;
     this.currentOptgroup = 0;
     this.drop;

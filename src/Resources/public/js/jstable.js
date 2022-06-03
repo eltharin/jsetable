@@ -33,6 +33,10 @@ class JSETable
 				"pageSizeDivPosition": "top",             // Set Page Size Select to Top / Bottom
 				"exportDivPosition": "top",               // Set Export Button to Top / Bottom
 
+				"DivText": true,                  // Print the text
+				"divTextFormat" : "{start} à {end} sur {filtered} lignes (total : {total})",
+				"classDivText": "JSEText",  // HTML Class the text
+				
 				"pagerSelectPage": true,                  // Print the page selector
 				"pagerSelectPageClass": "JSESelectPage",     // HTML Class the page selector
 				"pagerSelectPageSize": true,
@@ -51,7 +55,19 @@ class JSETable
 				"filterMultiple" : true,
 			};
 
-	static globalRenderers = [];
+	static globalRenderers = {
+		"number" : {
+			"display" : function (data){	return "p-  " + data;},
+			"sort" : function (data){	return parseFloat(data);}
+		},
+		"date" : {
+			"sort" : function (str){	  
+							var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+							return (m) ? ("0000" + m[3]).substr(-4) + '-' + ("00" + m[2]).substr(-2) + '-' + ("00" + m[1]).substr(-2) : null;
+						}
+		}
+	};
+	
 	renderers = [];
 
 
@@ -344,6 +360,10 @@ class JSETable
 		}
 
 		tbody.innerHTML += body;
+		if(this.options.DivText)
+		{
+			document.querySelector("." + this.options.classDivText).innerHTML = this.options.divTextFormat.replace('{start}',(this.page-1)*this.page_size+1).replace('{end}',Math.min(this.page*this.page_size, this.filteredRows.length)).replace('{filtered}',this.filteredRows.length).replace('{total}',this.data.length);
+		}
 	}
 
 	#sortLines()
@@ -610,7 +630,7 @@ class JSETable
 						this.cols[k].filterElement.multiplejs.destroy();
 					}
 
-					this.cols[k].filterElement.multiplejs = new vanillaSelectBox("#" + this.cols[k].filterElement.id, { "maxHeight": 200, "search": true, "placeHolder": "Choose a brand..." });
+					this.cols[k].filterElement.multiplejs = new vanillaSelectBox("#" + this.cols[k].filterElement.id, { "maxHeight": 200, "search": true, "placeHolder": "Choisissez..." });
 				}
 
 				if(this.filterCols[k] != null)
@@ -681,7 +701,14 @@ class JSETable
 		let divtop = document.createElement("div");
 		divtop.classList.add(this.options.classDivTop);
 		divcontainer.appendChild(divtop);
-
+		
+		if(this.options.DivText)
+		{
+			let divtext = document.createElement("div");
+			divtext.classList.add(this.options.classDivText);
+			divcontainer.appendChild(divtext);
+		}
+				
 		let divtable = document.createElement("div");
 		divtable.classList.add(this.options.classDivTable);
 		divcontainer.appendChild(divtable);
