@@ -254,9 +254,16 @@ class JSETable
 
 					filter_element.setValue = (val)=>
 					{
+						if(val == '')
+							{
+								val = [];
+							}
+						console.log(filter_element.multiplejs )
 						if(filter_element.multiplejs !== undefined)
 						{
+							
 							filter_element.multiplejs.setValue(val);
+							return;
 						}
 						filter_element.value = val;
 					};
@@ -612,7 +619,7 @@ class JSETable
 
 				if(valvide == true)
 				{
-					innerHtml = '<option value="&lt;&lt;vide&gt;&gt;" selected="selected">&lt;&lt;vide&gt;&gt;</option>' + innerHtml;
+					innerHtml = '<option value="&lt;&lt;vide&gt;&gt;">&lt;&lt;vide&gt;&gt;</option>' + innerHtml;
 				}
 
 				if(this.options.filterMultiple != true)
