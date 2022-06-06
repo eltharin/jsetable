@@ -11,6 +11,14 @@
 	display: flex;
 }
 
+
+
+.JSEContainer > .JSETable
+{
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
 .JSEContainer > .JSETable > table
 {
 	width:100%;
@@ -29,6 +37,10 @@
 	line-height: 20px;
 }
 
+.JSEText
+{
+	text-align:center;
+}
 
 .JSETop
 {
