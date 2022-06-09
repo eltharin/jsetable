@@ -31,6 +31,27 @@
 	vertical-align: middle;
 }
 
+.JSEContainer > .JSETable > table > thead > tr > th.JSESorters
+{
+	background-repeat: no-repeat;
+	background-position: bottom center;
+	cursor: pointer;
+	padding: 2px 0px 10px 0px;
+	background-image: url(data:image/gif;base64,R0lGODlhFQAJAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAkAAAIXjI+AywnaYnhUMoqt3gZXPmVg94yJVQAAOw==);
+}
+
+.JSEContainer > .JSETable > table > thead > tr > th.JSESorters.sort_asc
+{
+	background-position: bottom 2px center;
+	background-image: url(data:image/gif;base64,R0lGODlhFQAEAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAQAAAINjI8Bya2wnINUMopZAQA7);
+}
+
+.JSEContainer > .JSETable > table > thead > tr > th.JSESorters.sort_desc
+{
+	background-position: bottom 2px center;
+	background-image: url(data:image/gif;base64,R0lGODlhFQAEAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAQAAAINjB+gC+jP2ptn0WskLQA7);
+}
+
 .JSEContainer > .JSETable > table > thead > tr.JSEFilters > th > *
 {
 	width:100%;

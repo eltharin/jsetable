@@ -29,6 +29,7 @@ class JSETable
 				"classDivTop": "JSETop",                  // HTML Class for div top
 				"classDivBottom": "JSEBottom",            // HTML Class for div bottom
 				"classRowFilters": "JSEFilters",          // HTML Class for row with filters
+				"classThSorters": "JSESorters",          // HTML Class for th for sort
 				"pagerDivPosition": "top",                // Set Pager Select to Top / Bottom
 				"pageSizeDivPosition": "top",             // Set Page Size Select to Top / Bottom
 				"exportDivPosition": "top",               // Set Export Button to Top / Bottom
@@ -53,6 +54,7 @@ class JSETable
 				"pagerBtnLastVal":  ">>",
 
 				"filterMultiple" : true,
+				"sessionSave" : false,
 			};
 
 	static globalRenderers = {
@@ -61,13 +63,13 @@ class JSETable
 			"sort" : function (data){	return parseFloat(data);}
 		},
 		"date" : {
-			"sort" : function (str){	  
+			"sort" : function (str){
 							var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 							return (m) ? ("0000" + m[3]).substr(-4) + '-' + ("00" + m[2]).substr(-2) + '-' + ("00" + m[1]).substr(-2) : null;
 						}
 		}
 	};
-	
+
 	renderers = [];
 
 
@@ -117,14 +119,22 @@ class JSETable
 			});
 		}
 
+		if(this.options['sort'] !== undefined)
+		{
+
+			this.options['sort'].forEach((sort) => {
+				this.sortCols.push({"target": sort[0], "ord": (sort[1] == "desc" ? -1 : 1)});
+			});
+		}
 
 		this.#makeHTML();
 
 		this.#getThead();
 
 		this.table.querySelectorAll('thead tr:last-child th').forEach(t => {
+			t.classList.add(this.options.classThSorters);
 			t.addEventListener('click',  function (event){
-			  that.sort(event)
+				that.sort(event)
 			}, false);
 		});
 
@@ -149,8 +159,8 @@ class JSETable
 
 		this.trigger('onAfterSetData');
 		this.initialisationDone = true;
-	this.render();
-    };
+		this.render();
+	};
 
 	static setDefaultOption(optionName, optionValue)
 	{
@@ -193,7 +203,8 @@ class JSETable
 							"num": k,
 							"type": col.dataset.type,
 							"filter": col.dataset.filter,
-							"strict_filter": col.dataset.strict_filter
+							"strict_filter": col.dataset.strict_filter,
+							"thElement": col,
 						};
 			if(this.cols[k].filter == "select")
 			{
@@ -258,10 +269,10 @@ class JSETable
 							{
 								val = [];
 							}
-						console.log(filter_element.multiplejs )
+
 						if(filter_element.multiplejs !== undefined)
 						{
-							
+
 							filter_element.multiplejs.setValue(val);
 							return;
 						}
@@ -394,8 +405,39 @@ class JSETable
 				}
 				return 0;
 			});
+
+			this.#setClassSorter();
+
 		}
 	}
+
+	#setClassSorter()
+	{
+		this.table.querySelectorAll('.sort_asc.'+this.options.classThSorters).forEach(th => {
+			th.classList.remove('sort_asc');
+		});
+
+		this.table.querySelectorAll('.sort_desc.'+this.options.classThSorters).forEach(th => {
+			th.classList.remove('sort_desc');
+		});
+
+		for(var i = 0; i < this.sortCols.length; i++)
+		{
+			let col = this.cols[this.sortCols[i].target];
+
+			if(this.sortCols[i].ord == 1)
+			{
+				col.thElement.classList.add('sort_asc');
+			}
+			else if(this.sortCols[i].ord == -1)
+			{
+				col.thElement.classList.add('sort_desc');
+			}
+		}
+
+
+	}
+
 
 	#filterLines()
 	{
@@ -457,25 +499,29 @@ class JSETable
 	sort(e)
 	{
 		let target = e.target.cellIndex;
-
 		var found = false;
 
 		for(var i = 0; i < this.sortCols.length; i++)
 		{
-			if (this.sortCols[i].target == target)
+			if (this.sortCols[i].target == target && (this.sortCols.length <= 1 || e.shiftKey == true))
 			{
 				this.sortCols[i].ord = 0-this.sortCols[i].ord;
+				//this.#setClassSorter(e.target, this.sortCols[i].ord);
 				found = true;
 				break;
 			}
 		}
+
 		if(found == false)
 		{
 			if(e.shiftKey == false)
 			{
 				this.sortCols = [];
+			   // this.#clearClassSorter();
 			}
+
 			this.sortCols.push({"target": target, "ord": 1});
+		   // this.#setClassSorter(e.target, 1);
 		}
 
 		this.render();
@@ -895,37 +941,43 @@ class JSETable
 
 	#saveSession()
 	{
-		sessionStorage.setItem('JSETable.'+window.location+'.filters', JSON.stringify(this.filterCols));
-		sessionStorage.setItem('JSETable.'+window.location+'.sort', JSON.stringify(this.sortCols));
-		sessionStorage.setItem('JSETable.'+window.location+'.pager', JSON.stringify({page: this.page, page_size: this.page_size}));
+		if(this.options.sessionSave == true)
+		{
+			sessionStorage.setItem('JSETable.'+window.location+'.filters', JSON.stringify(this.filterCols));
+			sessionStorage.setItem('JSETable.'+window.location+'.sort', JSON.stringify(this.sortCols));
+			sessionStorage.setItem('JSETable.'+window.location+'.pager', JSON.stringify({page: this.page, page_size: this.page_size}));
+		}
 	}
 
 	#loadSession()
 	{
-		if(this.options.filterEnable == true)
+		if(this.options.sessionSave == true)
 		{
-			if(sessionStorage.getItem('JSETable.'+window.location+'.filters') != null)
+			if(this.options.filterEnable == true)
 			{
-				this.filterCols = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.filters'));
-				this.fillFilters();
+				if(sessionStorage.getItem('JSETable.'+window.location+'.filters') != null)
+				{
+					this.filterCols = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.filters'));
+					this.fillFilters();
+				}
 			}
-		}
 
-		if(this.options.sorterEnable == true)
-		{
-			if(sessionStorage.getItem('JSETable.'+window.location+'.sort') != null)
+			if(this.options.sorterEnable == true)
 			{
-				this.sortCols = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.sort'));
+				if(sessionStorage.getItem('JSETable.'+window.location+'.sort') != null)
+				{
+					this.sortCols = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.sort'));
+				}
 			}
-		}
 
-		if(this.options.pagerEnable == true)
-		{
-			let pagersession = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.pager'));
-			if(pagersession != null)
+			if(this.options.pagerEnable == true)
 			{
-				this.setPageSize(pagersession.page_size);
-				this.page = pagersession.page;
+				let pagersession = JSON.parse(sessionStorage.getItem('JSETable.'+window.location+'.pager'));
+				if(pagersession != null)
+				{
+					this.setPageSize(pagersession.page_size);
+					this.page = pagersession.page;
+				}
 			}
 		}
 	}
