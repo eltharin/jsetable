@@ -203,6 +203,7 @@ class JSETable
                 "num": k,
                 "type": col.dataset.type,
                 "filter": col.dataset.filter,
+                "multiple_separator": col.dataset.multipleseparator,
                 "strict_filter": col.dataset.strict_filter,
                 "thElement": col,
             };
@@ -221,9 +222,15 @@ class JSETable
             let ligne = new Object();
 
             tr.querySelectorAll('td').forEach((td,j) => {
-                ligne[this.cols[j].name] = td.innerHTML;
+                if(this.cols[j].multiple_separator == undefined)
+				{
+					ligne[this.cols[j].name] = [td.innerHTML];
+				}
+				else
+				{
+					ligne[this.cols[j].name] = td.innerHTML.split(this.cols[j].multiple_separator);
+				}
             });
-
             this.addLine(ligne);
         });
     }
@@ -452,10 +459,22 @@ class JSETable
                 if(this.options.filterEnable && this.filterCols.length > 0)
                 {
                     this.filterCols.forEach((filter,key) => {
-                        if(filter!= null && this.#evalfilter(this.__printval(key, line.values[this.cols[key].name], "filter"),filter.value, this.cols[key].strict_filter) == false)
-                        {
-                            line.filter =1;
-                        }
+						if(filter != null)
+						{
+                            let colFilter = 1;
+
+							line.values[this.cols[key].name].forEach((value,keyval) => {
+								if(this.#evalfilter(this.__printval(key, value, "filter"),filter.value, this.cols[key].strict_filter) == true)
+								{
+                                    colFilter =0;
+								}
+							});
+
+                            if(colFilter != 0)
+                            {
+                                line.filter =1;
+                            }
+						}
                     });
                 }
 
@@ -491,7 +510,7 @@ class JSETable
             }
             else
             {
-                return value.toString().includes(filter)
+                return value.toString().toLowerCase().includes(filter.toLowerCase())
             }
         }
     }
@@ -594,8 +613,17 @@ class JSETable
 
     __printval(colNum, val, typeRetour)
     {
+		if(Array.isArray(val) && val.length == 1)
+		{
+			val = val[0];
+		}
+				
         if(this.renderers[this.cols[colNum].type] === undefined)
         {
+			if(Array.isArray(val))
+			{
+				return val.join(this.cols[colNum].multiple_separator);
+			}
             return val;
         }
 
@@ -611,6 +639,10 @@ class JSETable
             return fct(val);
         }
 
+		if(Array.isArray(val))
+		{
+			return val.join(this.cols[colNum].multiple_separator);
+		}
         return val;
     }
 
@@ -652,7 +684,23 @@ class JSETable
                 let innerHtml = '';
                 let valvide= false;
 
-                [...new Set(this.data.map(a => this.__printval(k, a.values[this.cols[k].name], "display")))].sort(Intl.Collator().compare).forEach((val,k) => {
+				let dataset = [];
+				
+				/*if(c.multiple_separator == undefined)
+				{
+					dataset = [...new Set(this.data.map(a => this.__printval(k, a.values[this.cols[k].name], "display")))];
+				}
+				else
+				{*/
+					dataset = [...new Set(
+							this.data.map(
+								a => a.values[this.cols[k].name].map( b => this.__printval(k, b , "display"))
+							).flat(1)
+						)];
+				/*}*/
+				
+				
+                dataset.sort(Intl.Collator().compare).forEach((val,k) => {
                     if(val !== null && val !== "" && val !== " ")
                     {
                         innerHtml += '<option value="'+val+'">'+val+'</option>';
