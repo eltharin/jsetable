@@ -16,7 +16,7 @@
 .JSEContainer > .JSETable
 {
 	-overflow-x: auto;
-	overflow-y: hidden;
+	-overflow-y: hidden;
 }
 
 .JSEContainer > .JSETable > table
