@@ -2,9 +2,9 @@
 
 namespace Eltharin\JSETableBundle;
 
-use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
-class EltharinJSETableBundle extends Bundle
+class EltharinJSETableBundle extends AbstractBundle
 {
 
 }
