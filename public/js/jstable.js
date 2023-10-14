@@ -67,6 +67,12 @@ class JSETable
                 var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
                 return (m) ? ("0000" + m[3]).substr(-4) + '-' + ("00" + m[2]).substr(-2) + '-' + ("00" + m[1]).substr(-2) : null;
             }
+        },
+        "checkbox" : {
+            "display" : function (str){ return '<input type=checkbox checked=>';
+            },
+            "sort" : function (str) { return str;},
+            "filter" : function (str) { return str;}
         }
     };
 
@@ -90,6 +96,8 @@ class JSETable
 
     table = null;
     trFilter = null;
+
+    #nextRowId = 0;
 
     constructor(element, options = {}) {
         let that = this;
@@ -370,10 +378,10 @@ class JSETable
         {
             for(var keyRow = (this.page - 1) * page_size; keyRow < Math.min(this.page* page_size,this.filteredRows.length ); keyRow++)
             {
-                let row = this.filteredRows[keyRow];
+                let row = this.data['key_'+this.filteredRows[keyRow]];
 
                 let rowHTML = '';
-                rowHTML += '<tr>';
+                rowHTML += '<tr data-rowkey="' + row.key + '">';
 
                 this.cols.forEach((col,keyCol) => {
                     rowHTML += '<td>' + this.__printval(keyCol, row.values[col.name], "display") + '</td>';
@@ -398,8 +406,8 @@ class JSETable
             this.filteredRows.sort((a, b) => {
                 for(var i = 0; i < this.sortCols.length; i++)
                 {
-                    let val_a = this.__printval(this.sortCols[i].target, a.values[this.cols[this.sortCols[i].target].name], "sort");
-                    let val_b = this.__printval(this.sortCols[i].target, b.values[this.cols[this.sortCols[i].target].name], "sort");
+                    let val_a = this.__printval(this.sortCols[i].target, this.data['key_' + a].values[this.cols[this.sortCols[i].target].name], "sort");
+                    let val_b = this.__printval(this.sortCols[i].target, this.data['key_' + b].values[this.cols[this.sortCols[i].target].name], "sort");
 
                     if(val_a > val_b)
                     {
@@ -448,12 +456,12 @@ class JSETable
 
     #filterLines()
     {
+        console.log('filter');
         if(this.options.filterEnable == true)
         {
             this.filteredRows = [];
-            for(var i = 0; i < this.data.length; i++)
+            Object.values(this.data).forEach((line,keyRow) =>
             {
-                let line = this.data[i];
                 line.filter =0;
 
                 if(this.options.filterEnable && this.filterCols.length > 0)
@@ -480,13 +488,13 @@ class JSETable
 
                 if(line.filter == 0)
                 {
-                    this.filteredRows.push(line);
+                    this.filteredRows.push(line.key);
                 }
-            }
+            });
         }
         else
         {
-            this.filteredRows = this.data;
+            this.filteredRows = Object.values(this.data).map(item => item['key']);
         }
     }
 
@@ -598,7 +606,23 @@ class JSETable
 
     addLine(line)
     {
-        this.data.push({'filter': 0, 'values': line});
+        console.log(line)
+        this.data['key_' + this.#nextRowId] = ({'filter': 0, 'values': line, 'key' : this.#nextRowId});
+        this.#nextRowId++
+    }
+
+    removeLine(numLine)
+    {
+        delete this.data['key_'+numLine];
+        this.render();
+    }
+
+    updateLine(numLine, data)
+    {
+        Object.entries(data).forEach(([key, val]) => {
+            this.data['key_'+numLine].values[key] = val;
+        });
+        this.render();
     }
 
     loadData(data)
@@ -693,7 +717,7 @@ class JSETable
 				else
 				{*/
 					dataset = [...new Set(
-							this.data.map(
+                        Object.values(this.data).map(
 								a => a.values[this.cols[k].name].map( b => this.__printval(k, b , "display"))
 							).flat(1)
 						)];
