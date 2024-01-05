@@ -232,12 +232,20 @@ class JSETable
             tr.querySelectorAll('td').forEach((td,j) => {
                 if(this.cols[j].multiple_separator == undefined)
 				{
-					ligne[this.cols[j].name] = [td.innerHTML];
+					ligne[this.cols[j].name] = td.innerHTML;
 				}
 				else
 				{
 					ligne[this.cols[j].name] = td.innerHTML.split(this.cols[j].multiple_separator);
 				}
+
+                if(td.dataset.addvalue !== undefined)
+                {
+                    Object.entries(JSON.parse(td.dataset.addvalue)).forEach(([key, val]) => {
+                        ligne[key] = val;
+                    });
+
+                }
             });
             this.addLine(ligne);
         });
@@ -384,7 +392,7 @@ class JSETable
                 rowHTML += '<tr data-rowkey="' + row.key + '">';
 
                 this.cols.forEach((col,keyCol) => {
-                    rowHTML += '<td>' + this.__printval(keyCol, row.values[col.name], "display") + '</td>';
+                    rowHTML += '<td>' + this.#printval(row.values[col.name], "display", col.multiple_separator) + '</td>';
                 });
 
                 rowHTML += '</tr>'
@@ -406,8 +414,8 @@ class JSETable
             this.filteredRows.sort((a, b) => {
                 for(var i = 0; i < this.sortCols.length; i++)
                 {
-                    let val_a = this.__printval(this.sortCols[i].target, this.data['key_' + a].values[this.cols[this.sortCols[i].target].name], "sort");
-                    let val_b = this.__printval(this.sortCols[i].target, this.data['key_' + b].values[this.cols[this.sortCols[i].target].name], "sort");
+                    let val_a = this.#printval(this.data['key_' + a].values[this.cols[this.sortCols[i].target].name], "sort");
+                    let val_b = this.#printval(this.data['key_' + b].values[this.cols[this.sortCols[i].target].name], "sort");
 
                     if(val_a > val_b)
                     {
@@ -471,12 +479,10 @@ class JSETable
 						{
                             let colFilter = 1;
 
-							line.values[this.cols[key].name].forEach((value,keyval) => {
-								if(this.#evalfilter(this.__printval(key, value, "filter"),filter.value, this.cols[key].strict_filter) == true)
-								{
-                                    colFilter =0;
-								}
-							});
+                            if(this.#evalfilter(line.values[this.cols[key].name],filter.value, this.cols[key].strict_filter) == true)
+                            {
+                                colFilter =0;
+                            }
 
                             if(colFilter != 0)
                             {
@@ -498,8 +504,19 @@ class JSETable
         }
     }
 
-    #evalfilter(value, filter, strict)
+    #evalfilter(val, filter, strict)
     {
+        if(Array.isArray(val))
+        {
+            let isGood = false;
+            val.forEach(v => {
+                isGood |= this.#evalfilter(v, filter, strict);
+            })
+            return isGood;
+        }
+
+        let value = val.filter;
+
         if(value == "")
         {
             value = "<<vide>>";
@@ -606,8 +623,8 @@ class JSETable
 
     addLine(line)
     {
-        console.log(line)
-        this.data['key_' + this.#nextRowId] = ({'filter': 0, 'values': line, 'key' : this.#nextRowId});
+        this.data['key_' + this.#nextRowId] = ({'filter': 0, 'data': line,'values': [], 'key' : this.#nextRowId});
+        this.updateLineValues(this.#nextRowId);
         this.#nextRowId++
     }
 
@@ -619,12 +636,61 @@ class JSETable
 
     updateLine(numLine, data)
     {
-        Object.entries(data).forEach(([key, val]) => {
-            this.data['key_'+numLine].values[key] = val;
+        Object.entries(data).forEach(([colName, value]) => {
+            this.data['key_' + numLine].data[colName] = value;
         });
-        this.render();
+        this.updateLineValues(numLine);
     }
 
+    setValue(numLine, colName, value)
+    {
+        this.data['key_' + numLine].data[colName] = value;
+        this.updateLineValues(numLine);
+    }
+
+    updateLineValues(numLine)
+    {
+        Object.entries(this.data['key_' + numLine].data).forEach(([colName, value]) => {
+            let col = this.cols.find(e => e.name == colName);
+            this.data['key_'+numLine].values[colName] = Array.isArray(value) ? value.map(a => this.#getAllValues(col, a, this.data['key_' + numLine].data)): this.#getAllValues(col, value, this.data['key_' + numLine].data);
+        });
+    }
+
+    #getAllValues(col, value, object)
+    {
+        return {
+            "display" : this.#getTypedValues(col, value, object, "display"),
+            "filter" : this.#getTypedValues(col, value, object, "filter"),
+            "sort" : this.#getTypedValues(col, value, object, "sort"),
+        };
+    }
+    #getTypedValues(col, value, object, type)
+    {
+        if(Array.isArray(value))
+        {
+            return value.map(v => this.#getTypedValues(col, v, object, type));
+        }
+
+
+        if(col === undefined || this.renderers[col.type] === undefined)
+        {
+            return value;
+        }
+
+        if(this.renderers[col.type][type] !== undefined)
+        {
+            let fct = this.renderers[col.type][type];
+            return fct(value, object);
+        }
+
+        if(typeRetour != "display" && this.renderers[col.type]["display"] !== undefined)
+        {
+            let fct = this.renderers[col.type]["display"];
+            return fct(value, object);
+        }
+
+        return value;
+    }
     loadData(data)
     {
         let that = this;
@@ -635,39 +701,21 @@ class JSETable
         this.render();
     }
 
-    __printval(colNum, val, typeRetour)
+    #printval(value, type, join_separator = false)
     {
-		if(Array.isArray(val) && val.length == 1)
-		{
-			val = val[0];
-		}
-				
-        if(this.renderers[this.cols[colNum].type] === undefined)
+        if(Array.isArray(value))
         {
-			if(Array.isArray(val))
-			{
-				return val.join(this.cols[colNum].multiple_separator);
-			}
-            return val;
+            let ret = value.map(v => this.#printval(v, type, join_separator));
+
+            if(join_separator !== false && Array.isArray(value))
+            {
+                return ret.join(join_separator);
+            }
+
+            return ret;
         }
 
-        if(this.renderers[this.cols[colNum].type][typeRetour] !== undefined)
-        {
-            let fct = this.renderers[this.cols[colNum].type][typeRetour];
-            return fct(val);
-        }
-
-        if(typeRetour != "display" && this.renderers[this.cols[colNum].type]["display"] !== undefined)
-        {
-            let fct = this.renderers[this.cols[colNum].type]["display"];
-            return fct(val);
-        }
-
-		if(Array.isArray(val))
-		{
-			return val.join(this.cols[colNum].multiple_separator);
-		}
-        return val;
+        return value[type] == undefined ? value['val'] : value[type];
     }
 
     trigger(eventName)
@@ -708,32 +756,49 @@ class JSETable
                 let innerHtml = '';
                 let valvide= false;
 
-				let dataset = [];
-				
-				/*if(c.multiple_separator == undefined)
-				{
-					dataset = [...new Set(this.data.map(a => this.__printval(k, a.values[this.cols[k].name], "display")))];
-				}
-				else
-				{*/
-					dataset = [...new Set(
-                        Object.values(this.data).map(
-								a => a.values[this.cols[k].name].map( b => this.__printval(k, b , "display"))
-							).flat(1)
-						)];
-				/*}*/
-				
-				
-                dataset.sort(Intl.Collator().compare).forEach((val,k) => {
+				let dataset = {};
+                let that = this;
+
+                dataset = [...new Set(
+                    Object.values(this.data).map(function (a)
+                    {
+                        if(c.multiple_separator == undefined)
+                        {
+                            return {
+                                "key" : that.#printval(a.values[this.cols[k].name], "filter"),
+                                "val" : that.#printval(a.values[this.cols[k].name], "display")
+                            }
+                        }
+                        else
+                        {
+                            return a.values[that.cols[k].name].map( b => {
+                                return {
+                                    "key" : that.#printval(b , "filter", false),
+                                    "val" : that.#printval(b , "display", false)
+                                }
+                            });
+                        }
+                    }
+                        ).flat(2)
+                )];
+
+                dataset = [...new Map(dataset.map(item =>
+                    [item['val'], item])).values()];
+
+
+                Object.values(dataset).sort(function(a,b) { return a.val > b.val}).forEach((val,k) => {
                     if(val !== null && val !== "" && val !== " ")
                     {
-                        innerHtml += '<option value="'+val+'">'+val+'</option>';
+                        let key = val.key.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g,'&apos');
+                        innerHtml += '<option value="'+key+'">'+val.val+'</option>';
                     }
                     else
                     {
                         valvide= true;
                     }
                 });
+
+                console.log(dataset);
 
                 if(valvide == true)
                 {
