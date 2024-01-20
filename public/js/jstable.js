@@ -683,7 +683,7 @@ class JSETable
             return fct(value, object);
         }
 
-        if(typeRetour != "display" && this.renderers[col.type]["display"] !== undefined)
+        if(type != "display" && this.renderers[col.type]["display"] !== undefined)
         {
             let fct = this.renderers[col.type]["display"];
             return fct(value, object);
@@ -765,8 +765,8 @@ class JSETable
                         if(c.multiple_separator == undefined)
                         {
                             return {
-                                "key" : that.#printval(a.values[this.cols[k].name], "filter"),
-                                "val" : that.#printval(a.values[this.cols[k].name], "display")
+                                "key" : that.#printval(a.values[that.cols[k].name], "filter"),
+                                "val" : that.#printval(a.values[that.cols[k].name], "display")
                             }
                         }
                         else
