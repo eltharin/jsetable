@@ -1,0 +1,60 @@
+{% block jsetable_entity_widget -%}
+{%- set force_error = true -%}
+<table id="table_{{ form.vars.id }}">
+    <thead>
+        <tr>
+            <th></th>
+{%- for head in form.vars.header %}
+            <th>{{ head }}</th>
+{% endfor -%}
+        </tr>
+    </thead>
+<tbody>
+{%- for child in form %}
+{% with {form: child} %}
+{{ block('jsetable_entity_entry_widget_rows') }}
+{% endwith %}
+{% endfor -%}
+</tbody>
+</table>
+{%- for child in form %}
+{{- form_widget(child) -}}
+{% endfor -%}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        new JSETable('#table_{{ form.vars.id }}',{
+            sessionSave: true
+        });
+    }, false);
+
+    JR.events.add('click', '.checkbox_mirror_hidden', function() {
+        console.log(this)
+        if(this.checked)
+        {
+            document.querySelector('#' + this.dataset['forid']).removeAttribute('disabled');
+        }
+        else
+        {
+            document.querySelector('#' + this.dataset['forid']).setAttribute('disabled', true);
+        }
+
+    })
+</script>
+{%- endblock %}
+
+
+{% block jsetable_entity_entry_widget -%}
+{% if checked == false %}
+{% set disabled= true %}
+{% endif %}
+{{ block("hidden_widget", "form_div_layout.html.twig") }}
+{%- endblock %}
+
+{% block jsetable_entity_entry_widget_rows -%}
+<tr>
+    <td>
+        <input type="checkbox" class="checkbox_mirror_hidden" data-forid="{{ child.vars.id }}" {% if child.vars.checked == true %}checked="checked"{% endif %}>
+    </td>
+    {{- child.vars.label|raw -}}
+</tr>
+{%- endblock %}
