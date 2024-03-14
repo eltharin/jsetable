@@ -11,7 +11,7 @@ class EltharinJSETableBundle extends AbstractBundle
     public function prependExtension(ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         $container->extension('twig', [
-            'form_themes' => ['@EltharinJseTable/jsetableentity.html.twig']
+            'form_themes' => ['@EltharinJSETable/jsetableentity.html.twig']
         ]);
     }
 }
