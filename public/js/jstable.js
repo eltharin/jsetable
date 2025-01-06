@@ -65,7 +65,7 @@ class JSETable
         "date" : {
             "sort" : function (str){
                 var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-                return (m) ? ("0000" + m[3]).substr(-4) + '-' + ("00" + m[2]).substr(-2) + '-' + ("00" + m[1]).substr(-2) : null;
+                return (m) ? ("0000" + m[3]).substr(-4) + '-' + ("00" + m[2]).substr(-2) + '-' + ("00" + m[1]).substr(-2) : str;
             }
         },
         "checkbox" : {
@@ -307,7 +307,14 @@ class JSETable
             {
                 filter_element = document.createElement("input");
                 filter_element.ondblclick = function() {
-                    this.value = "<<vide>>";
+					if(this.value == "")
+					{
+						this.value = "<<vide>>";
+					}
+					else
+					{
+						this.value = "";
+					}
                     this.dispatchEvent(new Event("input"));
                 };
                 filter_element.oninput = function() {
@@ -786,11 +793,11 @@ class JSETable
                     [item['val'], item])).values()];
 
 
-                Object.values(dataset).sort(function(a,b) { return a.val > b.val}).forEach((val,k) => {
-                    if(val !== null && val !== "" && val !== " ")
+                Object.values(dataset).sort(function(a,b) { return a.val > b.val}).forEach((data,k) => {
+					if(data.val !== null && data.val !== "" && data.val !== " ")
                     {
-                        let key = val.key.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g,'&apos');
-                        innerHtml += '<option value="'+key+'">'+val.val+'</option>';
+                        let key = data.key.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g,'&apos');
+                        innerHtml += '<option value="'+key+'">'+data.val+'</option>';
                     }
                     else
                     {

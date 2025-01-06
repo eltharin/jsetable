@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+
+	<script src="./JseTable/public/js/jstable.js"></script>
+	<script src="./JseTable/public/js/vanillaSelectBox.js"></script>
+
+	<style>
+	* {
+
+  box-sizing: border-box;
+}
+
+
+	::before, ::after {
+  -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+
+
+
+	table td, table th
+	{
+		border : 1px solid black;
+	}
+	table th
+	{
+	background-color : #c8a5e4;
+	}
+	
+	</style>
+		<link rel="stylesheet" type="text/css" href="./JseTable/public/css/jstable.css">
+		<link rel="stylesheet" type="text/css" href="./JseTable/public/css/vanillaSelectBox.css">
+</head>
+<body>
+	<table id="catTable">
+  <thead>
+    <tr>
+      <th data-key="name" data-type="truc">Name</th>
+      <th data-key="age" data-type="trquc2">Age</th>
+      <th data-key="genre" data-type="truc3" data-filter="select">Gender</th>
+      <th data-key="date" data-type="date" data-exportable="0">date</th>
+    </tr>
+  </thead>
+	  <tbody>
+
+		
+<tr class="1"><td>mon nom 1</td><td>3</td><td>F</td><td>01/05/2020</td></tr>
+<tr class="2"><td>mon nom 2</td><td>5</td><td>F</td><td>01/06/2020</td></tr>
+<tr class="2"><td>mon nom 3</td><td>5</td><td>F</td><td>01/07/2020</td></tr>
+<tr class="3"><td>mon nom 4</td><td>2</td><td></td><td>01/08/2020</td></tr>
+<tr class="4"><td>mon nom 5</td><td>9</td><td></td><td>01/09/2020</td></tr>
+<tr class="5"><td>mon nom 6</td><td>3</td><td></td><td>01/10/2020</td></tr>
+<tr class="6"><td>mon nom 7</td><td>5</td><td></td><td>01/11/2020</td></tr>
+<tr class="7"><td>mon nom 8</td><td>2</td><td>MF</td><td>08/05/2020</td></tr>
+<tr class="8"><td></td><td>9</td><td>M</td><td>05/05/2020</td></tr>
+<tr class="9"><td>mon nom 10</td><td>3</td><td>F</td><td>10/05/2020</td></tr>
+<tr class="10"><td>mon nom 11</td><td>5</td><td>F</td><td>15/05/2020</td></tr>
+<tr class="11"><td>mon nom 12</td><td>2</td><td>MF</td><td>20/05/2020</td></tr>
+<tr class="12"><td>mon nom 13</td><td>15</td><td>M</td><td>21/05/2020</td></tr>
+<tr class="13"><td>mon nom 14</td><td>3</td><td>F</td><td>22/05/2020</td></tr>
+<tr class="14"><td>mon nom 15</td><td>12</td><td>F</td><td>23/06/2020</td></tr>
+<tr class="15"><td></td><td>2</td><td>MF</td><td>24/06/2020</td></tr>
+<tr class="16"><td>mon nom 17</td><td>9</td><td>M</td><td>12/06/2020</td></tr>
+<tr class="17"><td>mon nom 18</td><td></td><td>F</td><td>01/05/2020</td></tr>
+<tr class="18"><td>mon nom 19</td><td></td><td>F</td><td>01/05/2020</td></tr>
+<tr class="19"><td>mon nom 20</td><td></td><td>MF</td><td>01/05/2020</td></tr>
+<tr class="20"><td>mon nom 21</td><td>22</td><td>M</td><td>01/05/2020</td></tr>
+<tr class="21"><td>mon nom 22</td><td>3</td><td>F</td><td>01/05/2020</td></tr>
+<tr class="22"><td>mon nom 23</td><td>25</td><td>F</td><td>01/05/2020</td></tr>
+<tr class="23"><td>mon nom 24</td><td>22</td><td>MF</td><td>01/05/2020</td></tr>
+<tr class="24"><td>mon nom 25</td><td>9</td><td>M</td><td>01/05/2020</td></tr>
+<tr class="25"><td>mon nom 26</td><td>3</td><td>F</td><td>01/05/2020</td></tr>
+<tr class="26"><td>mon nom 27</td><td>5</td><td>F</td><td>01/05/2020</td></tr>
+
+	  </tbody>
+	</table>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    new JSETable('#catTable');
+
+}, false);
+
+
+
+</script>
+</body>
+</html>
