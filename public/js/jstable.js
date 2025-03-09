@@ -104,31 +104,27 @@ class JSETable
         this.table = document.querySelector(element);
         this.table.JSETable = this;
 
-        this.options = {...this.constructor.defaultOptions,...options};
+        this.options = {...this.constructor.defaultOptions, ...options};
 
-        if(this.options.page_size !== null)
-        {
+        if (this.options.page_size !== null) {
             this.page_size = this.options.page_size;
         }
 
         this.renderers = this.constructor.globalRenderers;
 
-        if(this.options['renderers'] !== undefined)
-        {
+        if (this.options['renderers'] !== undefined) {
             this.options['renderers'].forEach((renderer) => {
                 this.renderers[renderer.name] = renderer.renderer;
             });
         }
 
-        if(this.options['filters'] !== undefined)
-        {
+        if (this.options['filters'] !== undefined) {
             this.options['filters'].forEach((filter) => {
                 this.filter(filter.col, filter.value, false);
             });
         }
 
-        if(this.options['sort'] !== undefined)
-        {
+        if (this.options['sort'] !== undefined) {
 
             this.options['sort'].forEach((sort) => {
                 this.sortCols.push({"target": sort[0], "ord": (sort[1] == "desc" ? -1 : 1)});
@@ -141,23 +137,19 @@ class JSETable
 
         this.table.querySelectorAll('thead tr:last-child th').forEach(t => {
             t.classList.add(this.options.classThSorters);
-            t.addEventListener('click',  function (event){
+            t.addEventListener('click', function (event) {
                 that.sort(event)
             }, false);
         });
 
-        if(options.lignes !== undefined)
-        {
+        if (options.lignes !== undefined) {
             this.loadData(options.lignes);
-        }
-        else
-        {
+        } else {
             this.#getTbody();
         }
 
 
-        if(this.options.filterEnable == true)
-        {
+        if (this.options.filterEnable == true) {
             this.#makeFilterHead();
         }
 
@@ -168,6 +160,13 @@ class JSETable
         this.trigger('onAfterSetData');
         this.initialisationDone = true;
         this.render();
+
+        if(JR.events != undefined)
+        {
+            JR.events.add('onAjaxReload', this.table, (ev) => {
+                ev.eventTarget.JSETable.reloadHtml();
+            });
+        }
     };
 
     static setDefaultOption(optionName, optionValue)
@@ -199,6 +198,12 @@ class JSETable
         }
 
         this.createSelect();
+        this.render();
+    }
+
+    reloadHtml()
+    {
+        this.#getTbody();
         this.render();
     }
 
@@ -471,7 +476,6 @@ class JSETable
 
     #filterLines()
     {
-        console.log('filter');
         if(this.options.filterEnable == true)
         {
             this.filteredRows = [];
@@ -628,11 +632,15 @@ class JSETable
         }
     }
 
-    addLine(line)
+    addLine(line, refresh = false)
     {
         this.data['key_' + this.#nextRowId] = ({'filter': 0, 'data': line,'values': [], 'key' : this.#nextRowId});
         this.updateLineValues(this.#nextRowId);
-        this.#nextRowId++
+        this.#nextRowId++;
+        if(refresh)
+        {
+            this.render();
+        }
     }
 
     removeLine(numLine)
@@ -668,9 +676,11 @@ class JSETable
         return {
             "display" : this.#getTypedValues(col, value, object, "display"),
             "filter" : this.#getTypedValues(col, value, object, "filter"),
+            "filterVal" : this.#getTypedValues(col, value, object, "filterVal"),
             "sort" : this.#getTypedValues(col, value, object, "sort"),
         };
     }
+
     #getTypedValues(col, value, object, type)
     {
         if(Array.isArray(value))
@@ -698,6 +708,7 @@ class JSETable
 
         return value;
     }
+
     loadData(data)
     {
         let that = this;
@@ -722,7 +733,7 @@ class JSETable
             return ret;
         }
 
-        return value[type] == undefined ? value['val'] : value[type];
+        return value == undefined ? '' : (value[type] == undefined ? value['val'] : value[type]);
     }
 
     trigger(eventName)
@@ -730,7 +741,6 @@ class JSETable
         if(this.events[eventName] !== undefined)
         {
             Object.values(this.events[eventName]).sort((a, b) => a.priority - b.priority).forEach(ev => {
-                this.debug("launch event : " + ev.name);
                 ev.callback();
             });
         }
@@ -743,14 +753,6 @@ class JSETable
             this.events[eventName] = {};
         }
         this.events[eventName][listnerName] = {name: listnerName, callback: callback, priority: priority};
-    }
-
-    debug(str)
-    {
-        if (this.options.debug)
-        {
-            console.log(str);
-        }
     }
 
     createSelect()
@@ -773,7 +775,7 @@ class JSETable
                         {
                             return {
                                 "key" : that.#printval(a.values[that.cols[k].name], "filter"),
-                                "val" : that.#printval(a.values[that.cols[k].name], "display")
+                                "val" : that.#printval(a.values[that.cols[k].name], "filterVal")
                             }
                         }
                         else
@@ -781,7 +783,7 @@ class JSETable
                             return a.values[that.cols[k].name].map( b => {
                                 return {
                                     "key" : that.#printval(b , "filter", false),
-                                    "val" : that.#printval(b , "display", false)
+                                    "val" : that.#printval(b , "filterVal", false)
                                 }
                             });
                         }
@@ -791,7 +793,6 @@ class JSETable
 
                 dataset = [...new Map(dataset.map(item =>
                     [item['val'], item])).values()];
-
 
                 Object.values(dataset).sort(function(a,b) { return a.val > b.val}).forEach((data,k) => {
 					if(data.val !== null && data.val !== "" && data.val !== " ")
@@ -804,8 +805,6 @@ class JSETable
                         valvide= true;
                     }
                 });
-
-                console.log(dataset);
 
                 if(valvide == true)
                 {
