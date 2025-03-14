@@ -148,7 +148,6 @@ class JSETable
             this.#getTbody();
         }
 
-
         if (this.options.filterEnable == true) {
             this.#makeFilterHead();
         }
@@ -158,6 +157,8 @@ class JSETable
         this.tbody = this.table.querySelector('tbody');
 
         this.trigger('onAfterSetData');
+
+        this.#initialFilter();
         this.initialisationDone = true;
         this.render();
 
@@ -216,6 +217,8 @@ class JSETable
                 "num": k,
                 "type": col.dataset.type,
                 "filter": col.dataset.filter,
+                "initfilter": col.dataset.initfilter,
+                "initsort": col.dataset.initsort,
                 "multiple_separator": col.dataset.multipleseparator,
                 "strict_filter": col.dataset.strict_filter,
                 "thElement": col,
@@ -223,6 +226,15 @@ class JSETable
             if(this.cols[k].filter == "select")
             {
                 this.cols[k].strict_filter = 1;
+            }
+
+            if(this.cols[k].initfilter != undefined)
+            {
+                this.filterCols[k] = {value: this.cols[k].initfilter};
+            }
+            if(this.cols[k].initsort != undefined)
+            {
+                this.sortCols.push({target: k, ord: this.cols[k].initsort});
             }
         });
     }
@@ -282,13 +294,10 @@ class JSETable
                 {
                     filter_element.setAttribute('id', 'JSESelect_'+k);
                     filter_element.setAttribute('multiple', 'multiple');
+                    filter_element.classList.add('jse-select');
 
                     filter_element.getValue = ()=>{
-                        if(filter_element.multiplejs !== undefined)
-                        {
-                            return filter_element.multiplejs.getResult();
-                        }
-                        return filter_element.value;
+                        return Array.from(filter_element.selectedOptions).map((o) => o.value);
                     };
 
                     filter_element.setValue = (val)=>
@@ -298,19 +307,24 @@ class JSETable
                             val = [];
                         }
 
-                        if(filter_element.multiplejs !== undefined)
-                        {
+                        Array.from(filter_element.options).forEach((o) => {
+                            o.selected = false;
+                            if(val.includes(o.value)) {
+                                o.selected = true;
+                            }
+                        })
 
-                            filter_element.multiplejs.setValue(val);
-                            return;
+                        if(filter_element.multiselect !== undefined){
+                            filter_element.multiselect.updateSelectedCount();
+                            filter_element.multiselect.updateSelectElement();
                         }
-                        filter_element.value = val;
                     };
                 }
             }
             else
             {
                 filter_element = document.createElement("input");
+
                 filter_element.ondblclick = function() {
 					if(this.value == "")
 					{
@@ -343,19 +357,11 @@ class JSETable
 
             this.cols[k].filterElement = filter_element;
 
-            if(this.filterCols[k] != null)
-            {
-                filter_element.setValue(this.filterCols[k].value);
-            }
-
             filter_element.addEventListener('change', function() {
                 that.filter(k, this.getValue());
             }, false);
 
-            if(filter_element !== null)
-            {
-                th.append(filter_element);
-            }
+            th.append(filter_element);
 
             this.trFilter.append(th);
         });
@@ -546,7 +552,7 @@ class JSETable
             }
             else
             {
-                return value.toString().toLowerCase().includes(filter.toLowerCase())
+                return value.toString().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().includes(filter.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase());
             }
         }
     }
@@ -816,22 +822,16 @@ class JSETable
                     innerHtml = '<option value="" selected="selected"></option>' + innerHtml;
                 }
 
-
                 select.innerHTML = innerHtml;
-
-                if(this.options.filterMultiple == true)
-                {
-                    if(this.cols[k].filterElement.multiplejs !== undefined)
-                    {
-                        this.cols[k].filterElement.multiplejs.destroy();
-                    }
-
-                    this.cols[k].filterElement.multiplejs = new vanillaSelectBox("#" + this.cols[k].filterElement.id, { "maxHeight": 200, "search": true, "placeHolder": "Choisissez..." });
-                }
 
                 if(this.filterCols[k] != null)
                 {
                     select.setValue(this.filterCols[k].value);
+                }
+
+                if(this.options.filterMultiple == true)
+                {
+                    select.multiselect = new MultiSelect(select, { "placeHolder": "Choisissez..." });
                 }
             }
         });
@@ -1123,6 +1123,16 @@ class JSETable
                 }
             }
         }
+    }
+
+    #initialFilter()
+    {
+        this.filterCols.forEach((filter,key) => {
+            if(filter != null)
+            {
+                this.cols[key].filterElement.setValue(filter.value);
+            }
+        });
     }
 }
 
